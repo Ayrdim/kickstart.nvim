@@ -169,6 +169,19 @@ vim.o.confirm = true
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
+vim.keymap.set('i', 'jk', '<Esc>', { noremap = true })
+vim.keymap.set('n', '<BS>', '<C-o>', { noremap = true })
+vim.keymap.set('n', '<CR>', '<C-]>', { noremap = true })
+vim.keymap.set('n', 'F', '$zf%')
+
+vim.keymap.set('n', '<A-k>', '10k', { noremap = true })
+vim.keymap.set('n', '<A-j>', '10j', { noremap = true })
+-- vim.keymap.set('i', '<C-k>', '<Up>', { noremap = true })
+-- vim.keymap.set('i', '<C-j>', '<Down>', { noremap = true })
+vim.keymap.set('i', '<C-h>', '<Left>', { noremap = true })
+vim.keymap.set('i', '<C-l>', '<Right>', { noremap = true })
+vim.keymap.set('n', ';', ':', { noremap = true })
+
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
@@ -199,6 +212,7 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+--
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
 -- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
 -- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
@@ -407,11 +421,14 @@ require('lazy').setup({
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
         --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
+        defaults = {
+          mappings = {
+            i = {
+              ['<A-j>'] = 'move_selection_next',
+              ['<A-k>'] = 'move_selection_previous',
+            },
+          },
+        },
         -- pickers = {}
         extensions = {
           ['ui-select'] = {
@@ -423,6 +440,7 @@ require('lazy').setup({
       -- Enable Telescope extensions if they are installed
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
+      pcall(require('telescope').load_extension 'lazygit')
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
@@ -683,6 +701,18 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
+        zls = {
+          -- cmd = { ... },
+          -- filetypes = { ... },
+          -- capabilities = {},
+          settings = {
+            zig = {
+              completion = {
+                callSnippet = 'Replace',
+              },
+            },
+          },
+        },
 
         lua_ls = {
           -- cmd = { ... },
@@ -814,6 +844,12 @@ require('lazy').setup({
     --- @type blink.cmp.Config
     opts = {
       keymap = {
+        ['<Tab>'] = { 'accept', 'fallback' },
+        ['<Enter>'] = { 'accept', 'fallback' },
+        -- ['<Enter>'] = { 'accept' },
+
+        ['<A-k>'] = { 'select_prev' },
+        ['<A-j>'] = { 'select_next' },
         -- 'default' (recommended) for mappings similar to built-in completions
         --   <c-y> to accept ([y]es) the completion.
         --    This will auto-import if your LSP supports it.
@@ -895,6 +931,9 @@ require('lazy').setup({
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
       vim.cmd.colorscheme 'tokyonight-night'
+
+      vim.api.nvim_set_hl(0, 'NormalFloat', { bg = '#2a2e3f', fg = '#c0caf5' }) -- dark blue-gray background
+      vim.api.nvim_set_hl(0, 'FloatBorder', { bg = '#2a2e3f', fg = '#7aa2f7' }) -- blue border
     end,
   },
 
@@ -944,7 +983,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'elixir', 'zig', 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -962,6 +1001,90 @@ require('lazy').setup({
     --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
+  },
+
+  {
+    'ThePrimeagen/harpoon',
+    branch = 'harpoon2',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    config = function()
+      local harpoon = require 'harpoon'
+
+      -- REQUIRED
+      harpoon:setup()
+      -- REQUIRED
+
+      vim.keymap.set('n', '<leader>a', function()
+        harpoon:list():add()
+      end)
+      vim.keymap.set('n', '<leader>h', function()
+        harpoon.ui:toggle_quick_menu(harpoon:list())
+      end)
+
+      vim.keymap.set('n', '<leader>j', function()
+        harpoon:list():select(1)
+      end)
+      vim.keymap.set('n', '<leader>k', function()
+        harpoon:list():select(2)
+      end)
+      vim.keymap.set('n', '<leader>l', function()
+        harpoon:list():select(3)
+      end)
+      vim.keymap.set('n', '<leader>;', function()
+        harpoon:list():select(4)
+      end)
+
+      vim.keymap.set('n', '<leader>J', function()
+        harpoon:list():replace_at(1)
+      end)
+      vim.keymap.set('n', '<leader>K', function()
+        harpoon:list():replace_at(2)
+      end)
+      vim.keymap.set('n', '<leader>L', function()
+        harpoon:list():replace_at(3)
+      end)
+      vim.keymap.set('n', '<leader>:', function()
+        harpoon:list():replace_at(4)
+      end)
+
+      -- Toggle previous & next buffers stored within Harpoon list
+      -- vim.keymap.set('n', '<A-j>', function()
+      --   harpoon:list():prev()
+      -- end)
+      -- vim.keymap.set('n', '<A-k>', function()
+      --   harpoon:list():next()
+      -- end)
+    end,
+  },
+
+  {
+    'mg979/vim-visual-multi',
+    branch = 'master',
+    lazy = false, -- load it immediately
+    config = function()
+      -- optional: you can put config here if needed
+    end,
+  },
+
+  {
+    'kdheepak/lazygit.nvim',
+    lazy = true,
+    cmd = {
+      'LazyGit',
+      'LazyGitConfig',
+      'LazyGitCurrentFile',
+      'LazyGitFilter',
+      'LazyGitFilterCurrentFile',
+    },
+    -- optional for floating window border decoration
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+    },
+    -- setting the keybinding for LazyGit with 'keys' is recommended in
+    -- order to load the plugin when the command is run for the first time
+    keys = {
+      { 'git', '<cmd>LazyGit<cr>', desc = 'LazyGit' },
+    },
   },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
@@ -1010,6 +1133,10 @@ require('lazy').setup({
       lazy = '💤 ',
     },
   },
+})
+
+vim.lsp.config('elixirls', {
+  cmd = { '/home/ayrdim/.local/share/nvim/mason/packages/elixir-ls/language_server.sh' },
 })
 
 -- The line beneath this is called `modeline`. See `:help modeline`

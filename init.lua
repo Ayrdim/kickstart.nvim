@@ -176,6 +176,8 @@ vim.keymap.set('n', 'F', '$zf%')
 
 vim.keymap.set('n', '<A-k>', '10k', { noremap = true })
 vim.keymap.set('n', '<A-j>', '10j', { noremap = true })
+vim.keymap.set('v', '<A-k>', '10k', { noremap = true })
+vim.keymap.set('v', '<A-j>', '10j', { noremap = true })
 -- vim.keymap.set('i', '<C-k>', '<Up>', { noremap = true })
 -- vim.keymap.set('i', '<C-j>', '<Down>', { noremap = true })
 vim.keymap.set('i', '<C-h>', '<Left>', { noremap = true })

@@ -172,7 +172,10 @@ vim.o.confirm = true
 vim.keymap.set('i', 'jk', '<Esc>', { noremap = true })
 vim.keymap.set('n', '<BS>', '<C-o>', { noremap = true })
 vim.keymap.set('n', '<CR>', '<C-]>', { noremap = true })
-vim.keymap.set('n', 'F', '$zf%')
+-- vim.keymap.set('n', 'F', '$zf%')
+vim.keymap.set('n', 'F', ':normal $zf%<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', 'Z', 'za')
+-- add :only command to close windows stuck open
 
 vim.keymap.set('n', '<A-k>', '10k', { noremap = true })
 vim.keymap.set('n', '<A-j>', '10j', { noremap = true })
@@ -183,6 +186,13 @@ vim.keymap.set('v', '<A-j>', '10j', { noremap = true })
 vim.keymap.set('i', '<C-h>', '<Left>', { noremap = true })
 vim.keymap.set('i', '<C-l>', '<Right>', { noremap = true })
 vim.keymap.set('n', ';', ':', { noremap = true })
+vim.keymap.set('x', 'p', '"_dP', { desc = 'Paste without overwriting register' })
+-- vim.keymap.set('n', '<M-b>', ':Neotree toggle<CR>', { noremap = true, silent = true })
+vim.keymap.set({ 'n', 'i' }, '<M-i>', '<cmd>AvanteToggle<CR>', { desc = 'Toggle Avante chat' })
+
+vim.api.nvim_set_keymap('i', '<M-Tab>', 'copilot#Accept("<CR>")', { expr = true, silent = true })
+vim.api.nvim_set_keymap('i', '<C-N>', 'copilot#Next()', { expr = true, silent = true })
+vim.api.nvim_set_keymap('i', '<C-P>', 'copilot#Previous()', { expr = true, silent = true })
 
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
@@ -1016,11 +1026,11 @@ require('lazy').setup({
       harpoon:setup()
       -- REQUIRED
 
-      vim.keymap.set('n', '<leader>a', function()
-        harpoon:list():add()
-      end)
       vim.keymap.set('n', '<leader>h', function()
         harpoon.ui:toggle_quick_menu(harpoon:list())
+      end)
+      vim.keymap.set('n', '<leader>H', function()
+        harpoon:list():clear()
       end)
 
       vim.keymap.set('n', '<leader>j', function()
@@ -1048,14 +1058,6 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>:', function()
         harpoon:list():replace_at(4)
       end)
-
-      -- Toggle previous & next buffers stored within Harpoon list
-      -- vim.keymap.set('n', '<A-j>', function()
-      --   harpoon:list():prev()
-      -- end)
-      -- vim.keymap.set('n', '<A-k>', function()
-      --   harpoon:list():next()
-      -- end)
     end,
   },
 
@@ -1102,8 +1104,112 @@ require('lazy').setup({
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+
+  -- {
+  --   'nvim-neo-tree/neo-tree.nvim',
+  --   branch = 'v3.x',
+  --   dependencies = {
+  --     'nvim-lua/plenary.nvim',
+  --     'MunifTanjim/nui.nvim',
+  --     'nvim-tree/nvim-web-devicons', -- optional, but recommended
+  --   },
+  --   lazy = false, -- neo-tree will lazily load itself
+  -- },
+
+  {
+    'NeogitOrg/neogit',
+    dependencies = {
+      'nvim-lua/plenary.nvim', -- required
+      'sindrets/diffview.nvim', -- optional - Diff integration
+
+      -- Only one of these is needed.
+      'nvim-telescope/telescope.nvim', -- optional
+      'ibhagwan/fzf-lua', -- optional
+      'echasnovski/mini.pick', -- optional
+      'folke/snacks.nvim', -- optional
+    },
+  },
+
+  {
+    'github/copilot.vim',
+    cmd = { 'Copilot', 'CopilotEnable', 'CopilotDisable' },
+    event = 'VeryLazy', -- load lazily
+    config = function()
+      -- Enable Copilot by default
+      vim.cmd [[
+      let g:copilot_no_tab_map = v:true
+      let g:copilot_assume_mapped = v:true
+      let g:copilot_filetypes = {
+            \ '*' : v:true,
+            \ }
+    ]]
+
+      -- Optional: Map keybindings for accepting suggestions
+      -- <C-J> accepts Copilot suggestion
+      vim.api.nvim_set_keymap('i', '<C-J>', 'copilot#Accept("<CR>")', { expr = true, silent = true })
+      -- <C-K> to cycle previous suggestion
+      vim.api.nvim_set_keymap('i', '<C-K>', 'copilot#Previous()', { expr = true, silent = true })
+      -- <C-L> to cycle next suggestion
+      vim.api.nvim_set_keymap('i', '<C-L>', 'copilot#Next()', { expr = true, silent = true })
+      -- <C-U> to dismiss suggestion
+      vim.api.nvim_set_keymap('i', '<C-U>', 'copilot#Dismiss()', { expr = true, silent = true })
+    end,
+  },
+
+  {
+    'yetone/avante.nvim',
+    build = vim.fn.has 'win32' ~= 0 and 'powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false' or 'make',
+    event = 'VeryLazy',
+    version = false,
+    opts = {
+      instructions_file = 'avante.md',
+      provider = 'copilot', -- changed from 'claude' to 'copilot'
+      providers = {
+        copilot = {
+          -- This assumes you have `zbirenbaum/copilot.lua` setup
+          -- Copilot config options can include model, timeout, etc.
+          -- Avante may rely on `copilot.lua` to handle the API internally
+          timeout = 30000,
+          -- optional extra options if needed
+          extra_request_body = {
+            -- Copilot doesn't directly expose temperature, tokens etc.
+            -- But you can pass any settings supported by copilot.lua here
+          },
+        },
+      },
+    },
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'MunifTanjim/nui.nvim',
+      'echasnovski/mini.pick',
+      'nvim-telescope/telescope.nvim',
+      'hrsh7th/nvim-cmp',
+      'ibhagwan/fzf-lua',
+      'stevearc/dressing.nvim',
+      'folke/snacks.nvim',
+      'nvim-tree/nvim-web-devicons',
+      'zbirenbaum/copilot.lua', -- required for copilot provider
+      {
+        'HakonHarnes/img-clip.nvim',
+        event = 'VeryLazy',
+        opts = {
+          default = {
+            embed_image_as_base64 = false,
+            prompt_for_file_name = false,
+            drag_and_drop = { insert_mode = true },
+            use_absolute_path = true,
+          },
+        },
+      },
+      {
+        'MeanderingProgrammer/render-markdown.nvim',
+        opts = { file_types = { 'markdown', 'Avante' } },
+        ft = { 'markdown', 'Avante' },
+      },
+    },
+  },
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.

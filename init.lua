@@ -187,12 +187,51 @@ vim.keymap.set('i', '<C-h>', '<Left>', { noremap = true })
 vim.keymap.set('i', '<C-l>', '<Right>', { noremap = true })
 vim.keymap.set('n', ';', ':', { noremap = true })
 vim.keymap.set('x', 'p', '"_dP', { desc = 'Paste without overwriting register' })
--- vim.keymap.set('n', '<M-b>', ':Neotree toggle<CR>', { noremap = true, silent = true })
 vim.keymap.set({ 'n', 'i' }, '<M-i>', '<cmd>AvanteToggle<CR>', { desc = 'Toggle Avante chat' })
 
 vim.api.nvim_set_keymap('i', '<M-Tab>', 'copilot#Accept("<CR>")', { expr = true, silent = true })
 vim.api.nvim_set_keymap('i', '<C-N>', 'copilot#Next()', { expr = true, silent = true })
 vim.api.nvim_set_keymap('i', '<C-P>', 'copilot#Previous()', { expr = true, silent = true })
+
+vim.keymap.set('n', '<S-Tab>', ':tabnext<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<C-Esc>', ':tabclose<CR>', { noremap = true, silent = true })
+
+vim.keymap.set('n', '<S-e>', '$', { noremap = true, silent = true })
+
+vim.keymap.set('n', '<A-e>', '<cmd>Neotree reveal toggle<cr>')
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'markdown',
+  callback = function()
+    -- Override guess-indent.nvim for Markdown
+    vim.opt_local.tabstop = 2
+    vim.opt_local.shiftwidth = 2
+    vim.opt_local.softtabstop = 2
+    vim.opt_local.expandtab = true
+  end,
+})
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'javascript',
+  callback = function()
+    -- Override guess-indent.nvim for javascript
+    vim.opt_local.tabstop = 2
+    vim.opt_local.shiftwidth = 2
+    vim.opt_local.softtabstop = 2
+    vim.opt_local.expandtab = true
+  end,
+})
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'typescript',
+  callback = function()
+    -- Override guess-indent.nvim for typescript
+    vim.opt_local.tabstop = 2
+    vim.opt_local.shiftwidth = 2
+    vim.opt_local.softtabstop = 2
+    vim.opt_local.expandtab = true
+  end,
+})
 
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
@@ -711,7 +750,7 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
+        ts_ls = {},
         --
         zls = {
           -- cmd = { ... },
@@ -857,8 +896,6 @@ require('lazy').setup({
     opts = {
       keymap = {
         ['<Tab>'] = { 'accept', 'fallback' },
-        ['<Enter>'] = { 'accept', 'fallback' },
-        -- ['<Enter>'] = { 'accept' },
 
         ['<A-k>'] = { 'select_prev' },
         ['<A-j>'] = { 'select_next' },
@@ -1100,23 +1137,12 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.autopairs',
   require 'kickstart.plugins.neo-tree',
   require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
-
-  -- {
-  --   'nvim-neo-tree/neo-tree.nvim',
-  --   branch = 'v3.x',
-  --   dependencies = {
-  --     'nvim-lua/plenary.nvim',
-  --     'MunifTanjim/nui.nvim',
-  --     'nvim-tree/nvim-web-devicons', -- optional, but recommended
-  --   },
-  --   lazy = false, -- neo-tree will lazily load itself
-  -- },
 
   {
     'NeogitOrg/neogit',
@@ -1209,6 +1235,14 @@ require('lazy').setup({
         ft = { 'markdown', 'Avante' },
       },
     },
+  },
+  {
+    'lewis6991/gitsigns.nvim',
+    config = function()
+      require('gitsigns').setup {
+        current_line_blame = true,
+      }
+    end,
   },
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
